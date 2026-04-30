@@ -38,7 +38,8 @@ function attachInterceptors(api: typeof authApi) {
     async (error: AxiosError) => {
       const original = error.config as any;
 
-      if (error.response?.status === 401 && !original._retry) {
+      const isRefreshCall = original.url?.includes('/refresh');
+      if (error.response?.status === 401 && !original._retry && !isRefreshCall) {
         original._retry = true;
         const refreshToken = localStorage.getItem('medicare_refresh_token');
         if (refreshToken) {
@@ -55,6 +56,9 @@ function attachInterceptors(api: typeof authApi) {
             return Promise.reject(error);
           }
         }
+        localStorage.removeItem('medicare_access_token');
+        localStorage.removeItem('medicare_refresh_token');
+        window.location.href = '/login';
       }
 
       // Show toast for non-auth, non-retry errors
